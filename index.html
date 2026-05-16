@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Periodic Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #06080f;
+  --surface: #0d1017;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8eaf0;
+  --muted: rgba(232,234,240,0.45);
+  --panel: #0a0d16;
+
+  --c-alkali:      #ef4444;
+  --c-alkaline:    #f97316;
+  --c-lanthanide:  #eab308;
+  --c-actinide:    #84cc16;
+  --c-transition:  #06b6d4;
+  --c-post:        #8b5cf6;
+  --c-metalloid:   #ec4899;
+  --c-nonmetal:    #22c55e;
+  --c-halogen:     #14b8a6;
+  --c-noble:       #3b82f6;
+
+  --cell: 74px;
+  --gap: 4px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+.hidden { display: none !important; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body.bangla { font-family: 'Noto Serif Bengali', sans-serif; }
+
+/* grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,8,15,0.85);
+  backdrop-filter: blur(20px);
+  gap: 1rem; flex-wrap: wrap;
+}
+.backBtn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: 'Space Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  padding: 0.4rem 0.85rem; border-radius: 7px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.backBtn:hover { color: var(--text); border-color: rgba(196,106,232,0.5); background: rgba(196,106,232,0.07); }
+.backBtn svg { width: 13px; height: 13px; }
+.navCenter { flex: 1; display: flex; justify-content: center; }
+.langToggleBtn {
+  font-family: 'Space Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: rgba(196,106,232,0.1); color: #d87cf7;
+  border: 1px solid rgba(196,106,232,0.3);
+  padding: 0.4rem 0.9rem; border-radius: 20px; cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.langToggleBtn:hover { background: rgba(196,106,232,0.2); border-color: rgba(196,106,232,0.55); }
+
+/* ── HEADER ── */
+header {
+  position: relative; z-index: 10;
+  padding: 1.8rem 2.5rem 1.2rem;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.hTitle {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800; letter-spacing: -0.02em; line-height: 1;
+}
+.hTitle span {
+  color: transparent;
+  background: linear-gradient(90deg, #c46ae8, #f472b6);
+  -webkit-background-clip: text; background-clip: text;
+}
+.hSub {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); margin-top: 0.45rem;
+}
+.hControls { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+#searchInput {
+  font-family: 'Space Mono', monospace; font-size: 0.82rem;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  color: var(--text); padding: 0.5rem 1rem;
+  border-radius: 6px; outline: none; width: 210px;
+  transition: border-color 0.2s;
+}
+#searchInput:focus { border-color: rgba(96,165,250,0.4); }
+#searchInput::placeholder { color: var(--muted); }
+.filterBtn {
+  font-family: 'Space Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent; color: var(--muted);
+  transition: all 0.18s;
+}
+.filterBtn:hover, .filterBtn.active { color: var(--text); border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.06); }
+.filterBtn.active { border-color: var(--accent, #60a5fa); color: var(--accent, #60a5fa); }
+
+/* ── MAIN LAYOUT ── */
+.mainWrap {
+  position: relative; z-index: 1;
+  display: flex; gap: 0; align-items: flex-start;
+  padding: 0 1.2rem 2rem;
+}
+
+/* ── TABLE ── */
+.tableWrap { flex: 1; overflow-x: auto; }
+.ptGrid {
+  display: grid;
+  grid-template-columns: repeat(18, var(--cell));
+  grid-template-rows: repeat(7, var(--cell)) 14px repeat(2, var(--cell));
+  gap: var(--gap);
+  column-gap: var(--gap);
+  row-gap: var(--gap);
+  width: max-content;
+  padding: 0.5rem;
+}
+/* series placeholder buttons in main table rows 6 & 7, col 3 */
+.seriesPlaceholder {
+  width: var(--cell); height: var(--cell);
+  border-radius: 5px;
+  border: 1px dashed rgba(255,255,255,0.12);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: default;
+  background: rgba(255,255,255,0.01);
+  gap: 3px;
+}
+.seriesPlaceholder .spDots {
+  display: flex; gap: 3px;
+}
+.seriesPlaceholder .spDot {
+  width: 4px; height: 4px; border-radius: 50%;
+}
+.seriesPlaceholder .spLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.1em;
+  text-transform: uppercase; opacity: 0.5;
+  text-align: center;
+}
+
+/* ── ELEMENT CELL ── */
+.el {
+  width: var(--cell); height: var(--cell);
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; position: relative;
+  background: var(--elBg, rgba(255,255,255,0.03));
+  transition: transform 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  animation: cellIn 0.4s ease both;
+  overflow: hidden;
+}
+.el::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--elColor, transparent);
+  opacity: 0.11; border-radius: inherit;
+  transition: opacity 0.2s;
+}
+.el:hover {
+  transform: scale(1.16) translateZ(0);
+  z-index: 50;
+  border-color: var(--elColor, rgba(255,255,255,0.3));
+  box-shadow: 0 0 20px var(--elColor, transparent), 0 8px 24px rgba(0,0,0,0.5);
+}
+.el:hover::before { opacity: 0.22; }
+.el.dim { opacity: 0.12; }
+.el.highlight { opacity: 1; transform: scale(1.05); border-color: var(--elColor); }
+.el.pinned {
+  border-color: var(--elColor) !important;
+  box-shadow: 0 0 0 2px var(--elColor), 0 0 20px var(--elColor), 0 8px 24px rgba(0,0,0,0.5) !important;
+  z-index: 51;
+}
+
+@keyframes cellIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.elNum {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem; color: var(--muted);
+  position: absolute; top: 5px; left: 6px;
+  letter-spacing: 0.04em;
+}
+.elSym {
+  font-size: 1.6rem; font-weight: 800; line-height: 1;
+  color: var(--elColor, var(--text));
+  transition: color 0.2s;
+}
+.elName {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem; color: var(--muted);
+  margin-top: 2px; letter-spacing: 0.03em;
+  text-align: center; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 68px;
+}
+.elMass {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.48rem; color: var(--muted);
+  margin-top: 1px;
+}
+
+/* placeholder cell */
+.ph { grid-column: span 1; }
+
+/* lanthanide/actinide gap labels */
+.seriesLabel {
+  grid-column: 3 / span 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace; font-size: 0.52rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); opacity: 0.5;
+}
+
+/* ── DETAIL PANEL ── */
+.panel {
+  width: 320px; flex-shrink: 0;
+  position: sticky; top: 1rem;
+  margin-left: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.6rem;
+  transition: opacity 0.3s;
+  min-height: 480px;
+}
+.panelEmpty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; min-height: 380px; opacity: 0.3;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem; letter-spacing: 0.12em;
+  text-transform: uppercase; text-align: center;
+  gap: 0.6rem;
+}
+.panelEmpty .bigSym { font-size: 4rem; font-weight: 800; opacity: 0.15; }
+.pHeader { margin-bottom: 1.2rem; }
+.pNum {
+  font-family: 'Space Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.3rem;
+}
+.pSym {
+  font-size: 4.2rem; font-weight: 800; line-height: 1;
+  color: transparent; -webkit-background-clip: text; background-clip: text;
+  background: linear-gradient(135deg, var(--pColor, #60a5fa), white 180%);
+}
+.pName {
+  font-size: 1.3rem; font-weight: 700; letter-spacing: 0.02em; margin-top: 0.2rem;
+}
+.pCat {
+  font-family: 'Space Mono', monospace; font-size: 0.65rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.22rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+  display: inline-block;
+  border: 1px solid var(--pColor, #60a5fa);
+  color: var(--pColor, #60a5fa);
+  background: rgba(255,255,255,0.03);
+}
+.pDivider { height: 1px; background: var(--border); margin: 1rem 0; }
+.pGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.pStat label {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); display: block; margin-bottom: 0.25rem;
+}
+.pStat value {
+  font-size: 0.92rem; font-weight: 700; display: block;
+}
+.pConfig {
+  font-family: 'Space Mono', monospace; font-size: 0.7rem;
+  line-height: 1.6; padding: 0.65rem 0.8rem;
+  background: rgba(255,255,255,0.03); border-radius: 6px;
+  border-left: 2px solid var(--pColor, #60a5fa);
+  word-break: break-all; margin-top: 0.8rem;
+  color: var(--pColor, #60a5fa);
+}
+.pDesc {
+  font-size: 0.85rem; line-height: 1.7; opacity: 0.65;
+  margin-top: 0.9rem;
+}
+
+/* ── LEGEND ── */
+.legend {
+  position: relative; z-index: 1;
+  display: flex; flex-wrap: wrap; gap: 0.55rem;
+  padding: 0.8rem 1.7rem 1.8rem;
+}
+.lItem {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-family: 'Space Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); cursor: pointer;
+  padding: 0.32rem 0.65rem; border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all 0.18s;
+}
+.lItem:hover { color: var(--text); border-color: var(--border); }
+.lItem.active { color: var(--text); border-color: var(--lc); background: rgba(255,255,255,0.04); }
+.lDot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+@media (max-width: 1100px) {
+  .panel { display: none; }
+  .mainWrap { padding: 0; }
+}
+@media (max-width: 600px) {
+  :root { --cell: 36px; --gap: 2px; }
+  .elName, .elMass { display: none; }
+  .elSym { font-size: 0.9rem; }
+  header { padding: 1.2rem 1rem 0.8rem; }
+  .hControls { width: 100%; }
+  #searchInput { width: 100%; flex: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="backBtn" href="https://stounchvicinity65.github.io/portal/">
+    <svg viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11 6.5H2M6 2L1.5 6.5 6 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="lang-en">Portal</span><span class="lang-bn hidden">পোর্টাল</span>
+  </a>
+  <div class="navCenter">
+    <!-- empty centre keeps btn right-aligned -->
+  </div>
+  <button class="langToggleBtn" id="langToggle">বাংলা / EN</button>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="hTitle">
+      <span class="lang-en">Periodic <span>Table</span></span>
+      <span class="lang-bn hidden">পর্যায় <span>সারণি</span></span>
+    </div>
+    <div class="hSub">
+      <span class="lang-en">118 elements · Interactive · Click to explore</span>
+      <span class="lang-bn hidden">১১৮টি মৌল · ইন্টারেক্টিভ · ক্লিক করে জানুন</span>
+    </div>
+  </div>
+  <div class="hControls">
+    <input id="searchInput" type="text" autocomplete="off"
+      placeholder="Search element or symbol…"
+      data-placeholder-en="Search element or symbol…"
+      data-placeholder-bn="মৌল বা প্রতীক খুঁজুন…">
+    <button class="filterBtn" data-filter="all">
+      <span class="lang-en">All</span><span class="lang-bn hidden">সব</span>
+    </button>
+    <button class="filterBtn" data-filter="metal">
+      <span class="lang-en">Metals</span><span class="lang-bn hidden">ধাতু</span>
+    </button>
+    <button class="filterBtn" data-filter="nonmetal">
+      <span class="lang-en">Non-metals</span><span class="lang-bn hidden">অধাতু</span>
+    </button>
+    <button class="filterBtn" data-filter="noble">
+      <span class="lang-en">Noble gases</span><span class="lang-bn hidden">নিষ্ক্রিয় গ্যাস</span>
+    </button>
+  </div>
+</header>
+
+<div class="legend" id="legend"></div>
+
+<div class="mainWrap">
+  <div class="tableWrap">
+    <div class="ptGrid" id="ptGrid"></div>
+  </div>
+  <aside class="panel" id="panel">
+    <div class="panelEmpty" id="panelEmpty">
+      <div class="bigSym">?</div>
+      <div class="lang-en">Hover an element</div>
+      <div class="lang-bn hidden">একটি মৌলের উপর হোভার করুন</div>
+    </div>
+    <div id="panelContent" style="display:none"></div>
+  </aside>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const CATEGORIES = {
+  alkali:     { label: 'Alkali metals',       labelBn: 'ক্ষার ধাতু',         color: '#ef4444', group: 'metal' },
+  alkaline:   { label: 'Alkaline earth',      labelBn: 'ক্ষারীয় মৃত্তিকা',  color: '#f97316', group: 'metal' },
+  lanthanide: { label: 'Lanthanides',         labelBn: 'ল্যান্থানাইড',        color: '#eab308', group: 'metal' },
+  actinide:   { label: 'Actinides',           labelBn: 'অ্যাক্টিনাইড',        color: '#84cc16', group: 'metal' },
+  transition: { label: 'Transition metals',   labelBn: 'অবস্থান্তর ধাতু',    color: '#06b6d4', group: 'metal' },
+  post:       { label: 'Post-transition',     labelBn: 'পরবর্তী-অবস্থান্তর', color: '#8b5cf6', group: 'metal' },
+  metalloid:  { label: 'Metalloids',          labelBn: 'অর্ধধাতু',            color: '#ec4899', group: 'metal' },
+  nonmetal:   { label: 'Reactive non-metals', labelBn: 'সক্রিয় অধাতু',       color: '#22c55e', group: 'nonmetal' },
+  halogen:    { label: 'Halogens',            labelBn: 'হ্যালোজেন',           color: '#14b8a6', group: 'nonmetal' },
+  noble:      { label: 'Noble gases',         labelBn: 'নিষ্ক্রিয় গ্যাস',    color: '#3b82f6', group: 'noble' },
+};
+
+// [symbol, name, mass, category, period, group, config, melt°C, boil°C, density g/cm³, discovered, desc]
+const ELEMENTS = [
+  [1,'H','Hydrogen',1.008,'nonmetal',1,1,'1s¹',-259.1,-252.9,0.00009,'1766','The lightest and most abundant element in the universe. Makes up 75% of all normal matter by mass.'],
+  [2,'He','Helium',4.003,'noble',1,18,'1s²',-272.2,-268.9,0.000164,'1868','Second most abundant element in the universe. Inert, colorless, and used in balloons and MRI cooling.'],
+  [3,'Li','Lithium',6.941,'alkali',2,1,'[He] 2s¹',180.5,1342,0.534,'1817','Lightest solid metal. Used in lithium-ion batteries, mood stabilizers, and aerospace alloys.'],
+  [4,'Be','Beryllium',9.012,'alkaline',2,2,'[He] 2s²',1287,2469,1.848,'1798','Extremely light, stiff, and toxic. Used in aerospace structures and X-ray windows.'],
+  [5,'B','Boron',10.81,'metalloid',2,13,'[He] 2s² 2p¹',2075,4000,2.08,'1808','Hard metalloid essential for plant growth. Used in glass, ceramics, and nuclear reactors.'],
+  [6,'C','Carbon',12.01,'nonmetal',2,14,'[He] 2s² 2p²',3675,4027,2.267,'ancient','Basis of all known life. Forms more compounds than any other element including diamond and graphite.'],
+  [7,'N','Nitrogen',14.01,'nonmetal',2,15,'[He] 2s² 2p³',-210.0,-195.8,0.00125,'1772','Makes up 78% of Earth\'s atmosphere. Essential for proteins and DNA in all living things.'],
+  [8,'O','Oxygen',16.00,'nonmetal',2,16,'[He] 2s² 2p⁴',-218.3,-182.9,0.00143,'1774','Third most abundant element in the universe. Required for respiration and combustion.'],
+  [9,'F','Fluorine',19.00,'halogen',2,17,'[He] 2s² 2p⁵',-219.7,-188.1,0.00169,'1886','Most electronegative and reactive element. Used in Teflon and fluoride toothpaste.'],
+  [10,'Ne','Neon',20.18,'noble',2,18,'[He] 2s² 2p⁶',-248.6,-246.1,0.0009,'1898','Colorless, inert noble gas. Used in neon signs producing its distinctive red-orange glow.'],
+  [11,'Na','Sodium',22.99,'alkali',3,1,'[Ne] 3s¹',97.79,883,0.968,'1807','Soft, highly reactive metal. Essential electrolyte in biology. Reacts violently with water.'],
+  [12,'Mg','Magnesium',24.31,'alkaline',3,2,'[Ne] 3s²',650,1090,1.738,'1808','Light, strong metal. Central atom in chlorophyll. Used in alloys and fireworks.'],
+  [13,'Al','Aluminium',26.98,'post',3,13,'[Ne] 3s² 3p¹',660.3,2519,2.698,'1825','Most abundant metal in Earth\'s crust. Lightweight, corrosion-resistant, widely recycled.'],
+  [14,'Si','Silicon',28.09,'metalloid',3,14,'[Ne] 3s² 3p²',1414,3265,2.329,'1824','Basis of modern electronics and semiconductors. Second most abundant element in Earth\'s crust.'],
+  [15,'P','Phosphorus',30.97,'nonmetal',3,15,'[Ne] 3s² 3p³',44.15,281,1.82,'1669','Essential for DNA, RNA, and ATP. White phosphorus is dangerously reactive; red is stable.'],
+  [16,'S','Sulfur',32.07,'nonmetal',3,16,'[Ne] 3s² 3p⁴',115.2,444.6,1.96,'ancient','Yellow solid essential for proteins and amino acids. Used in gunpowder and vulcanizing rubber.'],
+  [17,'Cl','Chlorine',35.45,'halogen',3,17,'[Ne] 3s² 3p⁵',-101.5,-34.05,0.00321,'1774','Greenish toxic gas used to disinfect water. Combines with sodium to form table salt (NaCl).'],
+  [18,'Ar','Argon',39.95,'noble',3,18,'[Ne] 3s² 3p⁶',-189.3,-185.8,0.00178,'1894','Third most abundant gas in Earth\'s atmosphere. Used in welding to prevent oxidation.'],
+  [19,'K','Potassium',39.10,'alkali',4,1,'[Ar] 4s¹',63.38,759,0.862,'1807','Vital electrolyte for nerve signals and muscle contractions. Reacts spectacularly with water.'],
+  [20,'Ca','Calcium',40.08,'alkaline',4,2,'[Ar] 4s²',842,1484,1.54,'1808','Most abundant metal in the human body. Essential for bones, teeth, and nerve function.'],
+  [21,'Sc','Scandium',44.96,'transition',4,3,'[Ar] 3d¹ 4s²',1541,2836,2.985,'1879','Rare transition metal used in aerospace alloys and high-intensity lighting.'],
+  [22,'Ti','Titanium',47.87,'transition',4,4,'[Ar] 3d² 4s²',1668,3287,4.506,'1791','Strong, light, corrosion-resistant metal. Used in aircraft, implants, and spacecraft.'],
+  [23,'V','Vanadium',50.94,'transition',4,5,'[Ar] 3d³ 4s²',1910,3407,6.0,'1801','Used in steel alloys and vanadium redox flow batteries for grid energy storage.'],
+  [24,'Cr','Chromium',52.00,'transition',4,6,'[Ar] 3d⁵ 4s¹',1907,2671,7.14,'1798','Gives stainless steel its corrosion resistance. Creates brilliant green and red gemstones.'],
+  [25,'Mn','Manganese',54.94,'transition',4,7,'[Ar] 3d⁵ 4s²',1246,2061,7.21,'1774','Essential trace element and key component of steel production. Found in batteries.'],
+  [26,'Fe','Iron',55.85,'transition',4,8,'[Ar] 3d⁶ 4s²',1538,2861,7.874,'ancient','Most used metal in history. Earth\'s core is primarily iron-nickel. Vital for hemoglobin.'],
+  [27,'Co','Cobalt',58.93,'transition',4,9,'[Ar] 3d⁷ 4s²',1495,2927,8.9,'1735','Gives cobalt-blue its color. Used in lithium-ion battery cathodes and superalloys.'],
+  [28,'Ni','Nickel',58.69,'transition',4,10,'[Ar] 3d⁸ 4s²',1455,2913,8.908,'1751','Corrosion-resistant metal used in coins, stainless steel, and electric vehicle batteries.'],
+  [29,'Cu','Copper',63.55,'transition',4,11,'[Ar] 3d¹⁰ 4s¹',1084,2562,8.96,'ancient','Excellent electrical conductor. One of the first metals used by humans. Essential micronutrient.'],
+  [30,'Zn','Zinc',65.38,'transition',4,12,'[Ar] 3d¹⁰ 4s²',419.5,907,7.134,'ancient','Used in galvanizing iron to prevent rust. Essential trace mineral for immune function.'],
+  [31,'Ga','Gallium',69.72,'post',4,13,'[Ar] 3d¹⁰ 4s² 4p¹',29.76,2204,5.91,'1875','Melts in your hand (29.8°C). Used in LEDs, semiconductors, and solar cells.'],
+  [32,'Ge','Germanium',72.63,'metalloid',4,14,'[Ar] 3d¹⁰ 4s² 4p²',938.3,2833,5.323,'1886','Predicted by Mendeleev before its discovery. Used in fiber optics and semiconductors.'],
+  [33,'As','Arsenic',74.92,'metalloid',4,15,'[Ar] 3d¹⁰ 4s² 4p³',817,614,5.727,'ancient','Toxic metalloid historically used in pigments and rat poison. Used in semiconductors.'],
+  [34,'Se','Selenium',78.97,'nonmetal',4,16,'[Ar] 3d¹⁰ 4s² 4p⁴',220.8,685,4.28,'1817','Essential micronutrient in tiny amounts, toxic in excess. Used in solar cells and glass.'],
+  [35,'Br','Bromine',79.90,'halogen',4,17,'[Ar] 3d¹⁰ 4s² 4p⁵',-7.3,59.0,3.12,'1826','One of only two liquid elements at room temperature. Used in flame retardants.'],
+  [36,'Kr','Krypton',83.80,'noble',4,18,'[Ar] 3d¹⁰ 4s² 4p⁶',-157.4,-153.2,0.00369,'1898','Dense noble gas used in high-performance lighting and formerly defined the meter.'],
+  [37,'Rb','Rubidium',85.47,'alkali',5,1,'[Kr] 5s¹',39.31,688,1.532,'1861','Soft, silvery alkali metal. Reacts violently with water. Used in atomic clocks.'],
+  [38,'Sr','Strontium',87.62,'alkaline',5,2,'[Kr] 5s²',777,1382,2.64,'1790','Produces brilliant red flames in fireworks. Used in CRTs and strontium-90 in fallout.'],
+  [39,'Y','Yttrium',88.91,'transition',5,3,'[Kr] 4d¹ 5s²',1522,3338,4.47,'1794','Used in LED phosphors, superconductors, and cancer treatment.'],
+  [40,'Zr','Zirconium',91.22,'transition',5,4,'[Kr] 4d² 5s²',1854,4406,6.52,'1789','Extremely corrosion-resistant. Used in nuclear reactor fuel rods and surgical instruments.'],
+  [41,'Nb','Niobium',92.91,'transition',5,5,'[Kr] 4d⁴ 5s¹',2477,4744,8.57,'1801','Used in superconducting magnets and high-strength steel for pipelines.'],
+  [42,'Mo','Molybdenum',95.96,'transition',5,6,'[Kr] 4d⁵ 5s¹',2623,4639,10.28,'1781','Highest melting point of group 6. Used in high-temperature alloys and catalysts.'],
+  [43,'Tc','Technetium',98,'transition',5,7,'[Kr] 4d⁵ 5s²',2157,4265,11,'1937','First element produced artificially. All isotopes radioactive. Used in medical imaging.'],
+  [44,'Ru','Ruthenium',101.1,'transition',5,8,'[Kr] 4d⁷ 5s¹',2334,4150,12.37,'1844','Rare platinum-group metal used in hardening platinum and palladium alloys.'],
+  [45,'Rh','Rhodium',102.9,'transition',5,9,'[Kr] 4d⁸ 5s¹',1964,3695,12.41,'1803','Rarest stable element. Crucial in catalytic converters for cars. Extremely reflective.'],
+  [46,'Pd','Palladium',106.4,'transition',5,10,'[Kr] 4d¹⁰',1554.9,2963,12.023,'1803','Absorbs up to 900 times its own volume of hydrogen. Used in catalysts and electronics.'],
+  [47,'Ag','Silver',107.9,'transition',5,11,'[Kr] 4d¹⁰ 5s¹',961.8,2162,10.49,'ancient','Best electrical and thermal conductor of all elements. Used in jewelry, currency, and photography.'],
+  [48,'Cd','Cadmium',112.4,'transition',5,12,'[Kr] 4d¹⁰ 5s²',321.1,767,8.65,'1817','Toxic heavy metal used in rechargeable NiCd batteries and yellow pigments.'],
+  [49,'In','Indium',114.8,'post',5,13,'[Kr] 4d¹⁰ 5s² 5p¹',156.6,2072,7.31,'1863','Soft metal used in touchscreens (ITO) and flat-panel displays.'],
+  [50,'Sn','Tin',118.7,'post',5,14,'[Kr] 4d¹⁰ 5s² 5p²',231.9,2602,7.287,'ancient','Used since the Bronze Age. Prevents corrosion in food cans. "Tin cry" on bending.'],
+  [51,'Sb','Antimony',121.8,'metalloid',5,15,'[Kr] 4d¹⁰ 5s² 5p³',630.6,1587,6.685,'ancient','Brittle metalloid used in flame retardants and lead-acid batteries.'],
+  [52,'Te','Tellurium',127.6,'metalloid',5,16,'[Kr] 4d¹⁰ 5s² 5p⁴',449.5,988,6.24,'1782','Rare metalloid giving garlic breath to those who handle it. Used in solar cells.'],
+  [53,'I','Iodine',126.9,'halogen',5,17,'[Kr] 4d¹⁰ 5s² 5p⁵',113.5,184.3,4.933,'1811','Purple vapor when heated. Essential for thyroid hormones. Used as disinfectant.'],
+  [54,'Xe','Xenon',131.3,'noble',5,18,'[Kr] 4d¹⁰ 5s² 5p⁶',-111.8,-108.0,0.00589,'1898','Heavy noble gas used in photography flash lamps, anesthesia, and ion propulsion.'],
+  [55,'Cs','Caesium',132.9,'alkali',6,1,'[Xe] 6s¹',28.44,671,1.873,'1860','Most electropositive stable element. Atomic clocks using Cs define the SI second.'],
+  [56,'Ba','Barium',137.3,'alkaline',6,2,'[Xe] 6s²',727,1897,3.594,'1808','Produces brilliant green flames. Used in barium meals for X-ray imaging of the gut.'],
+  [57,'La','Lanthanum',138.9,'lanthanide',6,0,'[Xe] 5d¹ 6s²',920,3464,6.145,'1839','First lanthanide. Used in high-quality camera lenses and hydrogen storage alloys.'],
+  [58,'Ce','Cerium',140.1,'lanthanide',6,0,'[Xe] 4f¹ 5d¹ 6s²',798,3443,6.77,'1803','Most abundant rare-earth. Used in catalytic converters and glass polishing.'],
+  [59,'Pr','Praseodymium',140.9,'lanthanide',6,0,'[Xe] 4f³ 6s²',931,3520,6.77,'1885','Used in aircraft engine alloys, strong magnets, and studio lighting.'],
+  [60,'Nd','Neodymium',144.2,'lanthanide',6,0,'[Xe] 4f⁴ 6s²',1016,3074,7.01,'1885','Makes the strongest permanent magnets (Nd₂Fe₁₄B) used in speakers and EVs.'],
+  [61,'Pm','Promethium',145,'lanthanide',6,0,'[Xe] 4f⁵ 6s²',1042,3000,7.26,'1945','Only radioactive lanthanide. Used in nuclear batteries and luminous paint.'],
+  [62,'Sm','Samarium',150.4,'lanthanide',6,0,'[Xe] 4f⁶ 6s²',1072,1794,7.52,'1879','Used in samarium-cobalt permanent magnets for high-temperature applications.'],
+  [63,'Eu','Europium',152.0,'lanthanide',6,0,'[Xe] 4f⁷ 6s²',822,1596,5.244,'1901','Most reactive rare-earth. Produces red and blue phosphors in LEDs and euro banknotes.'],
+  [64,'Gd','Gadolinium',157.3,'lanthanide',6,0,'[Xe] 4f⁷ 5d¹ 6s²',1313,3273,7.90,'1880','MRI contrast agent. Has highest neutron capture cross-section of any stable isotope.'],
+  [65,'Tb','Terbium',158.9,'lanthanide',6,0,'[Xe] 4f⁹ 6s²',1356,3230,8.23,'1843','Used in green phosphors and magnetostrictive alloys that change shape in a magnetic field.'],
+  [66,'Dy','Dysprosium',162.5,'lanthanide',6,0,'[Xe] 4f¹⁰ 6s²',1412,2567,8.55,'1886','Added to neodymium magnets to maintain performance at high temperatures in EV motors.'],
+  [67,'Ho','Holmium',164.9,'lanthanide',6,0,'[Xe] 4f¹¹ 6s²',1474,2700,8.79,'1878','Highest magnetic moment of any natural element. Used in magnets and nuclear control rods.'],
+  [68,'Er','Erbium',167.3,'lanthanide',6,0,'[Xe] 4f¹² 6s²',1529,2868,9.07,'1843','Used as signal amplifier in fiber-optic communications cables. Colors glass pink.'],
+  [69,'Tm','Thulium',168.9,'lanthanide',6,0,'[Xe] 4f¹³ 6s²',1545,1950,9.32,'1879','Rarest stable lanthanide. Used in portable X-ray machines and laser surgery.'],
+  [70,'Yb','Ytterbium',173.1,'lanthanide',6,0,'[Xe] 4f¹⁴ 6s²',824,1196,6.90,'1878','Used in improving stainless steel properties and in atomic clocks surpassing Cs accuracy.'],
+  [71,'Lu','Lutetium',175.0,'lanthanide',6,0,'[Xe] 4f¹⁴ 5d¹ 6s²',1663,3402,9.841,'1907','Last and densest lanthanide. Used in PET scanners and cancer treatment.'],
+  [72,'Hf','Hafnium',178.5,'transition',6,4,'[Xe] 4f¹⁴ 5d² 6s²',2233,4603,13.31,'1923','Difficult to separate from zirconium. Used in nuclear control rods and Intel CPU gates.'],
+  [73,'Ta','Tantalum',180.9,'transition',6,5,'[Xe] 4f¹⁴ 5d³ 6s²',3017,5458,16.65,'1802','Highly corrosion-resistant. Used in mobile phone capacitors and surgical implants.'],
+  [74,'W','Tungsten',183.8,'transition',6,6,'[Xe] 4f¹⁴ 5d⁴ 6s²',3422,5555,19.25,'1781','Highest melting point of all elements. Used in light bulb filaments and armor-piercing bullets.'],
+  [75,'Re','Rhenium',186.2,'transition',6,7,'[Xe] 4f¹⁴ 5d⁵ 6s²',3186,5596,20.8,'1925','Second highest melting point. Used in jet engine superalloys and catalysts.'],
+  [76,'Os','Osmium',190.2,'transition',6,8,'[Xe] 4f¹⁴ 5d⁶ 6s²',3033,5012,22.59,'1803','Densest naturally occurring element (22.59 g/cm³). Used in fountain pen tips.'],
+  [77,'Ir','Iridium',192.2,'transition',6,9,'[Xe] 4f¹⁴ 5d⁷ 6s²',2446,4428,22.56,'1803','Second densest element. Most corrosion-resistant metal. Used in spark plugs.'],
+  [78,'Pt','Platinum',195.1,'transition',6,10,'[Xe] 4f¹⁴ 5d⁹ 6s¹',1768,3825,21.45,'1735','Precious, dense, highly catalytic. Used in catalytic converters, jewelry, and chemotherapy.'],
+  [79,'Au','Gold',197.0,'transition',6,11,'[Xe] 4f¹⁴ 5d¹⁰ 6s¹',1064,2856,19.3,'ancient','Most malleable metal. Chemically inert in most conditions. Global monetary standard for millennia.'],
+  [80,'Hg','Mercury',200.6,'transition',6,12,'[Xe] 4f¹⁴ 5d¹⁰ 6s²',-38.83,356.7,13.534,'ancient','Only liquid metal at room temperature. Toxic heavy metal. Formerly used in thermometers.'],
+  [81,'Tl','Thallium',204.4,'post',6,13,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹',304,1473,11.85,'1861','Highly toxic metal historically used in rat poison and was an agent in cold-war spying.'],
+  [82,'Pb','Lead',207.2,'post',6,14,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²',327.5,1749,11.34,'ancient','Dense, soft, toxic heavy metal. Used in batteries, radiation shielding, and historically in pipes.'],
+  [83,'Bi','Bismuth',208.9,'post',6,15,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³',271.4,1564,9.78,'ancient','Heaviest stable element. Forms beautiful iridescent crystals. Used in Pepto-Bismol.'],
+  [84,'Po','Polonium',209,'metalloid',6,16,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴',254,962,9.32,'1898','Highly radioactive. Discovered by Marie Curie. Used in anti-static devices and assassination.'],
+  [85,'At','Astatine',210,'halogen',6,17,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵',302,337,7,'1940','Rarest naturally occurring element. Extremely radioactive. Studied for targeted cancer therapy.'],
+  [86,'Rn','Radon',222,'noble',6,18,'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶',-71,-62,0.00973,'1900','Radioactive noble gas. Seeps from granite into buildings; second leading cause of lung cancer.'],
+  [87,'Fr','Francium',223,'alkali',7,1,'[Rn] 7s¹',27,677,1.87,'1939','Most unstable naturally occurring element. Half-life of 22 minutes. Most electropositive element.'],
+  [88,'Ra','Radium',226,'alkaline',7,2,'[Rn] 7s²',696,1413,5,'1898','Radioactive alkaline earth metal. Discovered by Marie Curie. Once used in luminous paint.'],
+  [89,'Ac','Actinium',227,'actinide',7,0,'[Rn] 6d¹ 7s²',1050,3198,10,'1899','First actinide. 150× more radioactive than radium. Used in neutron sources.'],
+  [90,'Th','Thorium',232.0,'actinide',7,0,'[Rn] 6d² 7s²',1750,4788,11.7,'1829','Weakly radioactive. Proposed as safer alternative to uranium in nuclear reactors.'],
+  [91,'Pa','Protactinium',231.0,'actinide',7,0,'[Rn] 5f² 6d¹ 7s²',1568,4027,15.37,'1913','Rare, toxic, radioactive. Decays to actinium. Difficult to work with.'],
+  [92,'U','Uranium',238.0,'actinide',7,0,'[Rn] 5f³ 6d¹ 7s²',1132,4131,19.1,'1789','Dense radioactive metal. Fuel for nuclear power (U-235 fission). Natural isotopes mildly radioactive.'],
+  [93,'Np','Neptunium',237,'actinide',7,0,'[Rn] 5f⁴ 6d¹ 7s²',644,4000,20.2,'1940','First transuranic element. Produced in nuclear reactors. Used in neutron detectors.'],
+  [94,'Pu','Plutonium',244,'actinide',7,0,'[Rn] 5f⁶ 7s²',640,3228,19.8,'1940','Used in nuclear weapons and reactors. Toxically radioactive. Named after Pluto.'],
+  [95,'Am','Americium',243,'actinide',7,0,'[Rn] 5f⁷ 7s²',1176,2011,13.7,'1944','Found in household smoke detectors. Produces gamma rays and alpha particles.'],
+  [96,'Cm','Curium',247,'actinide',7,0,'[Rn] 5f⁷ 6d¹ 7s²',1340,3110,13.51,'1944','Named after Pierre and Marie Curie. Used in space probes as alpha-particle X-ray source.'],
+  [97,'Bk','Berkelium',247,'actinide',7,0,'[Rn] 5f⁹ 7s²',986,2627,14.78,'1949','Synthesized in particle accelerators. Named after Berkeley, California.'],
+  [98,'Cf','Californium',251,'actinide',7,0,'[Rn] 5f¹⁰ 7s²',900,1470,15.1,'1950','Intense neutron emitter. Used in medical cancer treatment and airport security.'],
+  [99,'Es','Einsteinium',252,'actinide',7,0,'[Rn] 5f¹¹ 7s²',860,996,8.84,'1952','Named after Einstein. First identified in fallout from first thermonuclear explosion.'],
+  [100,'Fm','Fermium',257,'actinide',7,0,'[Rn] 5f¹² 7s²',1527,null,null,'1952','Named after Enrico Fermi. Only produced in nuclear reactors and particle accelerators.'],
+  [101,'Md','Mendelevium',258,'actinide',7,0,'[Rn] 5f¹³ 7s²',827,null,null,'1955','Named after Mendeleev. First element made one atom at a time. Highly unstable.'],
+  [102,'No','Nobelium',259,'actinide',7,0,'[Rn] 5f¹⁴ 7s²',827,null,null,'1958','Named after Alfred Nobel. Unusually stable 2+ oxidation state for an actinide.'],
+  [103,'Lr','Lawrencium',262,'actinide',7,0,'[Rn] 5f¹⁴ 7s² 7p¹',1627,null,null,'1961','Named after Ernest Lawrence. Last actinide and last element with known electron configuration.'],
+  [104,'Rf','Rutherfordium',267,'transition',7,4,'[Rn] 5f¹⁴ 6d² 7s²',2100,5500,23.2,'1964','First transactinide element. Named after Ernest Rutherford. Highly unstable.'],
+  [105,'Db','Dubnium',270,'transition',7,5,'[Rn] 5f¹⁴ 6d³ 7s²',null,null,29.3,'1967','Named after Dubna, Russia. Synthesized by both US and Soviet teams.'],
+  [106,'Sg','Seaborgium',271,'transition',7,6,'[Rn] 5f¹⁴ 6d⁴ 7s²',null,null,35,'1974','Named after Glenn Seaborg. First element named after a living person at time of naming.'],
+  [107,'Bh','Bohrium',270,'transition',7,7,'[Rn] 5f¹⁴ 6d⁵ 7s²',null,null,37.1,'1981','Named after Niels Bohr. Produced by bombarding bismuth with chromium nuclei.'],
+  [108,'Hs','Hassium',277,'transition',7,8,'[Rn] 5f¹⁴ 6d⁶ 7s²',null,null,40.7,'1984','Named after Hesse, Germany. Only 9 atoms have ever been detected.'],
+  [109,'Mt','Meitnerium',278,'transition',7,9,'[Rn] 5f¹⁴ 6d⁷ 7s²',null,null,37.4,'1982','Named after Lise Meitner who co-discovered nuclear fission. Extremely unstable.'],
+  [110,'Ds','Darmstadtium',281,'transition',7,10,'[Rn] 5f¹⁴ 6d⁸ 7s²',null,null,34.8,'1994','Named after Darmstadt, Germany. Only a few atoms have been made.'],
+  [111,'Rg','Roentgenium',282,'transition',7,11,'[Rn] 5f¹⁴ 6d¹⁰ 7s¹',null,null,28.7,'1994','Named after Wilhelm Röntgen, discoverer of X-rays.'],
+  [112,'Cn','Copernicium',285,'transition',7,12,'[Rn] 5f¹⁴ 6d¹⁰ 7s²',null,null,23.7,'1996','Named after Copernicus. May be gaseous at room temperature due to relativistic effects.'],
+  [113,'Nh','Nihonium',286,'post',7,13,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹',null,null,16,'2004','First element discovered in Asia. Named for Japan (Nihon). Synthesized at RIKEN.'],
+  [114,'Fl','Flerovium',289,'post',7,14,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²',null,null,14,'1998','Named after Flerov Laboratory. May be a gas at room temperature like noble gases.'],
+  [115,'Mc','Moscovium',290,'post',7,15,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³',null,null,13.5,'2003','Named after Moscow Oblast. Synthesized jointly by Russia and the US.'],
+  [116,'Lv','Livermorium',293,'post',7,16,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴',null,null,12.9,'2000','Named after Lawrence Livermore National Laboratory in California.'],
+  [117,'Ts','Tennessine',294,'halogen',7,17,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵',null,null,7.2,'2010','Named after Tennessee, USA. Second heaviest confirmed element.'],
+  [118,'Og','Oganesson',294,'noble',7,18,'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶',null,null,5,'2002','Heaviest known element. Named after physicist Yuri Oganessian. May be a solid at room temp.'],
+];
+
+// Map: atomicNum → element row (build after ELEMENTS is defined)
+const elMap = {};
+ELEMENTS.forEach(e => { elMap[e[0]] = e; });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANGLA NAMES & DESCRIPTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+const BN = {
+  1:  ['হাইড্রোজেন','মহাবিশ্বের সবচেয়ে হালকা ও প্রাচুর্যময় মৌল। সমস্ত সাধারণ পদার্থের ৭৫% ভরই হাইড্রোজেন।'],
+  2:  ['হিলিয়াম','মহাবিশ্বে দ্বিতীয় সর্বাধিক প্রাচুর্যময় মৌল। নিষ্ক্রিয়, বর্ণহীন এবং বেলুন ও MRI যন্ত্রে ব্যবহৃত।'],
+  3:  ['লিথিয়াম','সবচেয়ে হালকা কঠিন ধাতু। লিথিয়াম-আয়ন ব্যাটারি ও মেজাজ নিয়ন্ত্রক ওষুধে ব্যবহৃত।'],
+  4:  ['বেরিলিয়াম','অত্যন্ত হালকা, শক্ত ও বিষাক্ত। মহাকাশ কাঠামো ও X-রে উইন্ডোতে ব্যবহৃত।'],
+  5:  ['বোরন','উদ্ভিদের বৃদ্ধির জন্য অপরিহার্য কঠিন অর্ধধাতু। কাঁচ, সিরামিক ও পারমাণবিক চুল্লিতে ব্যবহৃত।'],
+  6:  ['কার্বন','সকল জীবনের ভিত্তি। হীরা ও গ্রাফাইট সহ যেকোনো মৌলের চেয়ে বেশি যৌগ গঠন করে।'],
+  7:  ['নাইট্রোজেন','পৃথিবীর বায়ুমণ্ডলের ৭৮% নাইট্রোজেন। প্রোটিন ও DNA-এর জন্য অপরিহার্য।'],
+  8:  ['অক্সিজেন','মহাবিশ্বে তৃতীয় সর্বাধিক প্রাচুর্যময়। শ্বসন ও দহনের জন্য অপরিহার্য।'],
+  9:  ['ফ্লোরিন','সবচেয়ে তড়িৎঋণাত্মক ও সক্রিয় মৌল। টেফলন ও ফ্লোরাইড টুথপেস্টে ব্যবহৃত।'],
+  10: ['নিয়ন','বর্ণহীন, নিষ্ক্রিয় নোবেল গ্যাস। নিয়ন সাইনে লাল-কমলা আলো দেয়।'],
+  11: ['সোডিয়াম','নরম, অত্যন্ত সক্রিয় ধাতু। জীববিজ্ঞানে অপরিহার্য তড়িৎবিশ্লেষ্য। জলের সাথে তীব্র বিক্রিয়া করে।'],
+  12: ['ম্যাগনেসিয়াম','হালকা, শক্তিশালী ধাতু। ক্লোরোফিলের কেন্দ্রীয় পরমাণু। আতশবাজি ও সংকর ধাতুতে ব্যবহৃত।'],
+  13: ['অ্যালুমিনিয়াম','পৃথিবীর ভূত্বকে সর্বাধিক প্রাচুর্যময় ধাতু। হালকা, ক্ষয়রোধী এবং ব্যাপকভাবে পুনর্ব্যবহারযোগ্য।'],
+  14: ['সিলিকন','আধুনিক ইলেকট্রনিক্স ও সেমিকন্ডাক্টরের ভিত্তি। পৃথিবীর ভূত্বকে দ্বিতীয় সর্বাধিক প্রাচুর্যময়।'],
+  15: ['ফসফরাস','DNA, RNA ও ATP-এর জন্য অপরিহার্য। শ্বেত ফসফরাস বিপজ্জনক সক্রিয়; লাল ফসফরাস স্থিতিশীল।'],
+  16: ['সালফার','প্রোটিন ও অ্যামিনো অ্যাসিডের জন্য অপরিহার্য হলুদ কঠিন। বারুদ ও রাবার সংশ্লেষণে ব্যবহৃত।'],
+  17: ['ক্লোরিন','সবুজ বিষাক্ত গ্যাস, জল বিশুদ্ধ করতে ব্যবহৃত। সোডিয়ামের সাথে মিলে টেবিল লবণ (NaCl) গঠন করে।'],
+  18: ['আর্গন','পৃথিবীর বায়ুমণ্ডলে তৃতীয় সর্বাধিক গ্যাস। ঢালাই কাজে জারণ রোধ করতে ব্যবহৃত।'],
+  19: ['পটাশিয়াম','স্নায়ু সংকেত ও পেশি সংকোচনের জন্য গুরুত্বপূর্ণ তড়িৎবিশ্লেষ্য। জলের সাথে দর্শনীয় বিক্রিয়া করে।'],
+  20: ['ক্যালসিয়াম','মানবদেহে সর্বাধিক প্রাচুর্যময় ধাতু। হাড়, দাঁত ও স্নায়ু কার্যক্রমের জন্য অপরিহার্য।'],
+  21: ['স্ক্যান্ডিয়াম','দুর্লভ অবস্থান্তর ধাতু। মহাকাশ সংকর ধাতু ও উচ্চ-তীব্রতার আলোতে ব্যবহৃত।'],
+  22: ['টাইটেনিয়াম','শক্তিশালী, হালকা, ক্ষয়রোধী ধাতু। বিমান, ইমপ্লান্ট ও মহাকাশযানে ব্যবহৃত।'],
+  23: ['ভ্যানাডিয়াম','ইস্পাত সংকর ধাতু ও ভ্যানাডিয়াম রেডক্স ফ্লো ব্যাটারিতে ব্যবহৃত।'],
+  24: ['ক্রোমিয়াম','স্টেইনলেস স্টিলকে ক্ষয়রোধী করে। সবুজ ও লাল রত্নপাথর তৈরি করে।'],
+  25: ['ম্যাঙ্গানিজ','অপরিহার্য ট্রেস মৌল এবং ইস্পাত উৎপাদনের মূল উপাদান। ব্যাটারিতে পাওয়া যায়।'],
+  26: ['আয়রন (লোহা)','ইতিহাসে সবচেয়ে বেশি ব্যবহৃত ধাতু। পৃথিবীর কেন্দ্রভাগ মূলত লোহা-নিকেল। হিমোগ্লোবিনের জন্য অপরিহার্য।'],
+  27: ['কোবাল্ট','কোবাল্ট-নীল রঙ দেয়। লিথিয়াম-আয়ন ব্যাটারি ক্যাথোড ও সুপার অ্যালয়ে ব্যবহৃত।'],
+  28: ['নিকেল','ক্ষয়রোধী ধাতু। মুদ্রা, স্টেইনলেস স্টিল ও ইলেকট্রিক গাড়ির ব্যাটারিতে ব্যবহৃত।'],
+  29: ['তামা (কপার)','সর্বোত্তম বৈদ্যুতিক পরিবাহী। মানবজাতির প্রথম ব্যবহৃত ধাতুগুলোর একটি।'],
+  30: ['জিঙ্ক','লোহার মরিচা রোধে ব্যবহৃত। রোগ প্রতিরোধ ক্ষমতার জন্য অপরিহার্য ট্রেস খনিজ।'],
+  31: ['গ্যালিয়াম','হাতে গলে যায় (২৯.৮°C)। LED, সেমিকন্ডাক্টর ও সৌরকোষে ব্যবহৃত।'],
+  32: ['জার্মেনিয়াম','আবিষ্কারের আগেই মেন্ডেলিভ ভবিষ্যদ্বাণী করেছিলেন। ফাইবার অপটিক্স ও সেমিকন্ডাক্টরে ব্যবহৃত।'],
+  33: ['আর্সেনিক','বিষাক্ত অর্ধধাতু। সেমিকন্ডাক্টরে ব্যবহৃত।'],
+  34: ['সেলেনিয়াম','অল্প পরিমাণে অপরিহার্য, বেশি পরিমাণে বিষাক্ত। সৌরকোষ ও কাঁচে ব্যবহৃত।'],
+  35: ['ব্রোমিন','ঘরের তাপমাত্রায় তরল দুটি মৌলের একটি। অগ্নি প্রতিরোধকে ব্যবহৃত।'],
+  36: ['ক্রিপটন','ভারী নোবেল গ্যাস। উচ্চ-কার্যক্ষমতার আলোক যন্ত্রে ব্যবহৃত।'],
+  37: ['রুবিডিয়াম','নরম, রুপালি ক্ষার ধাতু। পারমাণবিক ঘড়িতে ব্যবহৃত।'],
+  38: ['স্ট্রনশিয়াম','আতশবাজিতে উজ্জ্বল লাল শিখা তৈরি করে।'],
+  39: ['ইট্রিয়াম','LED ফসফর, সুপারকন্ডাক্টর ও ক্যান্সার চিকিৎসায় ব্যবহৃত।'],
+  40: ['জিরকোনিয়াম','অত্যন্ত ক্ষয়রোধী। পারমাণবিক চুল্লির জ্বালানি রড ও অস্ত্রোপচারের যন্ত্রে ব্যবহৃত।'],
+  41: ['নিওবিয়াম','অতিপরিবাহী চুম্বক ও উচ্চ-শক্তির ইস্পাত পাইপলাইনে ব্যবহৃত।'],
+  42: ['মলিবডেনাম','গ্রুপ ৬-এর সর্বোচ্চ গলনাঙ্ক। উচ্চ-তাপমাত্রার সংকর ধাতু ও অনুঘটকে ব্যবহৃত।'],
+  43: ['টেকনেশিয়াম','কৃত্রিমভাবে উৎপাদিত প্রথম মৌল। সব আইসোটোপ তেজস্ক্রিয়। চিকিৎসা চিত্রগ্রহণে ব্যবহৃত।'],
+  44: ['রুথেনিয়াম','দুর্লভ প্লাটিনাম-গ্রুপ ধাতু। প্লাটিনাম ও প্যালাডিয়াম সংকর ধাতু শক্ত করতে ব্যবহৃত।'],
+  45: ['রোডিয়াম','সবচেয়ে দুর্লভ স্থিতিশীল মৌল। গাড়ির ক্যাটালিটিক কনভার্টারে অপরিহার্য।'],
+  46: ['প্যালেডিয়াম','নিজের আয়তনের ৯০০ গুণ হাইড্রোজেন শোষণ করে। অনুঘটক ও ইলেকট্রনিক্সে ব্যবহৃত।'],
+  47: ['রূপা (সিলভার)','সব মৌলের মধ্যে সর্বোত্তম বৈদ্যুতিক ও তাপ পরিবাহী। গহনা ও মুদ্রায় ব্যবহৃত।'],
+  48: ['ক্যাডমিয়াম','বিষাক্ত ভারী ধাতু। NiCd রিচার্জেবল ব্যাটারি ও হলুদ রঞ্জকে ব্যবহৃত।'],
+  49: ['ইন্ডিয়াম','টাচস্ক্রিন (ITO) ও ফ্ল্যাট-প্যানেল ডিসপ্লেতে ব্যবহৃত নরম ধাতু।'],
+  50: ['টিন (সংক ধাতু)','ব্রোঞ্জ যুগ থেকে ব্যবহৃত। খাদ্য ক্যানে মরিচা রোধ করে।'],
+  51: ['অ্যান্টিমনি','অগ্নি প্রতিরোধক ও সীসা-অ্যাসিড ব্যাটারিতে ব্যবহৃত ভঙ্গুর অর্ধধাতু।'],
+  52: ['টেলুরিয়াম','দুর্লভ অর্ধধাতু। সৌরকোষে ব্যবহৃত।'],
+  53: ['আয়োডিন','গরম করলে বেগুনি বাষ্প দেয়। থাইরয়েড হরমোনের জন্য অপরিহার্য। জীবাণুনাশক হিসেবে ব্যবহৃত।'],
+  54: ['জেনন','ভারী নোবেল গ্যাস। ফটোগ্রাফি ফ্ল্যাশ, অ্যানেস্থেশিয়া ও আয়ন প্রপালশনে ব্যবহৃত।'],
+  55: ['সিজিয়াম','সবচেয়ে তড়িৎধনাত্মক স্থিতিশীল মৌল। পারমাণবিক ঘড়ি SI সেকেন্ড সংজ্ঞায়িত করে।'],
+  56: ['বেরিয়াম','উজ্জ্বল সবুজ শিখা তৈরি করে। পাকস্থলী X-রে চিত্রগ্রহণে ব্যবহৃত।'],
+  57: ['ল্যান্থানাম','প্রথম ল্যান্থানাইড। উচ্চমানের ক্যামেরা লেন্স ও হাইড্রোজেন সঞ্চয় সংকর ধাতুতে ব্যবহৃত।'],
+  58: ['সেরিয়াম','সবচেয়ে প্রচুর বিরল-মৃত্তিকা মৌল। ক্যাটালিটিক কনভার্টার ও কাঁচ পালিশে ব্যবহৃত।'],
+  59: ['প্রাসিওডিমিয়াম','বিমান ইঞ্জিন সংকর ধাতু, শক্তিশালী চুম্বক ও স্টুডিও আলোতে ব্যবহৃত।'],
+  60: ['নিওডিমিয়াম','সবচেয়ে শক্তিশালী স্থায়ী চুম্বক (Nd₂Fe₁₄B) তৈরি করে। স্পিকার ও ইভি গাড়িতে ব্যবহৃত।'],
+  61: ['প্রমেথিয়াম','একমাত্র তেজস্ক্রিয় ল্যান্থানাইড। পারমাণবিক ব্যাটারিতে ব্যবহৃত।'],
+  62: ['সামারিয়াম','উচ্চ-তাপমাত্রায় সামারিয়াম-কোবাল্ট স্থায়ী চুম্বকে ব্যবহৃত।'],
+  63: ['ইউরোপিয়াম','সবচেয়ে সক্রিয় বিরল-মৃত্তিকা। LED ও ইউরো নোটে লাল ও নীল ফসফর তৈরি করে।'],
+  64: ['গ্যাডোলিনিয়াম','MRI কনট্রাস্ট এজেন্ট। যেকোনো স্থিতিশীল আইসোটোপের মধ্যে সর্বোচ্চ নিউট্রন ক্যাপচার ক্রস-সেকশন।'],
+  65: ['টার্বিয়াম','সবুজ ফসফর ও ম্যাগনেটোস্ট্রিকটিভ সংকর ধাতুতে ব্যবহৃত।'],
+  66: ['ডিসপ্রোসিয়াম','ইভি মোটরে নিওডিমিয়াম চুম্বকে উচ্চ তাপমাত্রায় কার্যক্ষমতা বজায় রাখতে যোগ করা হয়।'],
+  67: ['হোলমিয়াম','যেকোনো প্রাকৃতিক মৌলের সর্বোচ্চ চৌম্বক মোমেন্ট। পারমাণবিক নিয়ন্ত্রণ দণ্ডে ব্যবহৃত।'],
+  68: ['আর্বিয়াম','ফাইবার-অপটিক যোগাযোগে সংকেত পরিবর্ধক হিসেবে ব্যবহৃত। কাঁচকে গোলাপি রঙ দেয়।'],
+  69: ['থুলিয়াম','সবচেয়ে দুর্লভ স্থিতিশীল ল্যান্থানাইড। বহনযোগ্য X-রে মেশিন ও লেজার অস্ত্রোপচারে ব্যবহৃত।'],
+  70: ['ইটার্বিয়াম','স্টেইনলেস স্টিলের বৈশিষ্ট্য উন্নয়নে ও পারমাণবিক ঘড়িতে ব্যবহৃত।'],
+  71: ['লুটেশিয়াম','শেষ ও ঘনতম ল্যান্থানাইড। PET স্ক্যানার ও ক্যান্সার চিকিৎসায় ব্যবহৃত।'],
+  72: ['হ্যাফনিয়াম','জিরকোনিয়াম থেকে আলাদা করা কঠিন। পারমাণবিক নিয়ন্ত্রণ দণ্ড ও CPU গেটে ব্যবহৃত।'],
+  73: ['ট্যান্টালাম','অত্যন্ত ক্ষয়রোধী। মোবাইল ফোনের ক্যাপাসিটর ও অস্ত্রোপচারের ইমপ্লান্টে ব্যবহৃত।'],
+  74: ['টাংস্টেন','সব মৌলের মধ্যে সর্বোচ্চ গলনাঙ্ক। বাল্বের ফিলামেন্ট ও বর্ম-ভেদী গুলিতে ব্যবহৃত।'],
+  75: ['রেনিয়াম','দ্বিতীয় সর্বোচ্চ গলনাঙ্ক। জেট ইঞ্জিন সুপার অ্যালয় ও অনুঘটকে ব্যবহৃত।'],
+  76: ['অসমিয়াম','প্রাকৃতিকভাবে সবচেয়ে ঘন মৌল (২২.৫৯ g/cm³)। কলমের নিব তৈরিতে ব্যবহৃত।'],
+  77: ['ইরিডিয়াম','দ্বিতীয় ঘন মৌল। সবচেয়ে ক্ষয়রোধী ধাতু। স্পার্ক প্লাগে ব্যবহৃত।'],
+  78: ['প্লাটিনাম','দামি, ঘন, অত্যন্ত অনুঘটকী। ক্যাটালিটিক কনভার্টার, গহনা ও কেমোথেরাপিতে ব্যবহৃত।'],
+  79: ['সোনা (গোল্ড)','সবচেয়ে নমনীয় ধাতু। রাসায়নিকভাবে প্রায় নিষ্ক্রিয়। সহস্র বছর ধরে বৈশ্বিক মুদ্রামান।'],
+  80: ['পারদ (মার্কারি)','ঘরের তাপমাত্রায় একমাত্র তরল ধাতু। বিষাক্ত ভারী ধাতু। থার্মোমিটারে ব্যবহৃত হতো।'],
+  81: ['থ্যালিয়াম','অত্যন্ত বিষাক্ত ধাতু। ইঁদুরনাশক ও গুপ্তচরবৃত্তিতে ব্যবহৃত হয়েছে।'],
+  82: ['সীসা (লেড)','ঘন, নরম, বিষাক্ত ভারী ধাতু। ব্যাটারি ও বিকিরণ রক্ষায় ব্যবহৃত।'],
+  83: ['বিসমাথ','সবচেয়ে ভারী স্থিতিশীল মৌল। সুন্দর রঙিন স্ফটিক তৈরি করে। পেপ্টো-বিসমলে ব্যবহৃত।'],
+  84: ['পোলোনিয়াম','অত্যন্ত তেজস্ক্রিয়। মেরি কুরি আবিষ্কার করেন।'],
+  85: ['অ্যাস্টাটিন','সবচেয়ে দুর্লভ প্রাকৃতিক মৌল। অত্যন্ত তেজস্ক্রিয়। ক্যান্সার থেরাপিতে গবেষণা চলছে।'],
+  86: ['রেডন','তেজস্ক্রিয় নোবেল গ্যাস। গ্রানাইট থেকে নির্গত হয়ে ভবনে জমে; ফুসফুসের ক্যান্সারের দ্বিতীয় প্রধান কারণ।'],
+  87: ['ফ্রান্সিয়াম','সবচেয়ে অস্থিতিশীল প্রাকৃতিক মৌল। অর্ধজীবন ২২ মিনিট। সবচেয়ে তড়িৎধনাত্মক মৌল।'],
+  88: ['রেডিয়াম','তেজস্ক্রিয় ক্ষারীয় মৃত্তিকা ধাতু। মেরি কুরি আবিষ্কার করেন। আলোকিত রঙে ব্যবহৃত হতো।'],
+  89: ['অ্যাক্টিনিয়াম','প্রথম অ্যাক্টিনাইড। রেডিয়ামের চেয়ে ১৫০ গুণ বেশি তেজস্ক্রিয়।'],
+  90: ['থোরিয়াম','দুর্বলভাবে তেজস্ক্রিয়। পারমাণবিক চুল্লিতে ইউরেনিয়ামের নিরাপদ বিকল্প হিসেবে প্রস্তাবিত।'],
+  91: ['প্রোটেক্টিনিয়াম','দুর্লভ, বিষাক্ত, তেজস্ক্রিয়। অ্যাক্টিনিয়ামে রূপান্তরিত হয়।'],
+  92: ['ইউরেনিয়াম','ঘন তেজস্ক্রিয় ধাতু। পারমাণবিক বিদ্যুৎ উৎপাদনের জ্বালানি।'],
+  93: ['নেপচুনিয়াম','প্রথম ট্রান্সইউরেনিক মৌল। পারমাণবিক চুল্লিতে উৎপাদিত।'],
+  94: ['প্লুটোনিয়াম','পারমাণবিক অস্ত্র ও চুল্লিতে ব্যবহৃত। বিষাক্তভাবে তেজস্ক্রিয়।'],
+  95: ['আমেরিসিয়াম','ঘরের ধোঁয়া পরিচিতিকারকে পাওয়া যায়। গামা রশ্মি ও আলফা কণা নির্গত করে।'],
+  96: ['কিউরিয়াম','পিয়েরে ও মেরি কুরির নামে নামকরণ। মহাকাশ অনুসন্ধানে আলফা-কণা X-রে উৎস হিসেবে ব্যবহৃত।'],
+  97: ['বার্কেলিয়াম','কণা ত্বরকে সংশ্লেষিত। ক্যালিফোর্নিয়ার বার্কেলের নামে নামকরণ।'],
+  98: ['ক্যালিফোর্নিয়াম','তীব্র নিউট্রন নির্গতকারী। চিকিৎসা ক্যান্সার চিকিৎসায় ব্যবহৃত।'],
+  99: ['আইনস্টাইনিয়াম','আইনস্টাইনের নামে। প্রথম তাপনিউক্লীয় বিস্ফোরণের তেজস্ক্রিয় পতনে পাওয়া গিয়েছিল।'],
+  100: ['ফার্মিয়াম','এনরিকো ফার্মির নামে। শুধু পারমাণবিক চুল্লি ও কণা ত্বরকে উৎপাদিত।'],
+  101: ['মেন্ডেলেভিয়াম','মেন্ডেলিভের নামে। একসাথে একটি পরমাণু করে তৈরি প্রথম মৌল।'],
+  102: ['নোবেলিয়াম','আলফ্রেড নোবেলের নামে। অ্যাক্টিনাইডের জন্য অস্বাভাবিকভাবে স্থিতিশীল ২+ জারণ অবস্থা।'],
+  103: ['লরেন্সিয়াম','আর্নেস্ট লরেন্সের নামে। শেষ অ্যাক্টিনাইড।'],
+  104: ['রাদারফোর্ডিয়াম','প্রথম ট্রান্সঅ্যাক্টিনাইড মৌল। আর্নেস্ট রাদারফোর্ডের নামে।'],
+  105: ['ডুবনিয়াম','রাশিয়ার দুবনার নামে। মার্কিন ও সোভিয়েত উভয় দল সংশ্লেষিত করেছে।'],
+  106: ['সিবোর্গিয়াম','গ্লেন সিবোর্গের নামে। জীবিত অবস্থায় নামকরণকৃত প্রথম মৌল।'],
+  107: ['বোরিয়াম','নীলস বোরের নামে। বিসমাথে ক্রোমিয়াম নিউক্লিয়াস নিক্ষেপ করে উৎপাদিত।'],
+  108: ['হ্যাসিয়াম','জার্মানির হেসের নামে। মাত্র ৯টি পরমাণু কখনো শনাক্ত হয়েছে।'],
+  109: ['মেইটনেরিয়াম','নিউক্লিয়ার ফিশনের সহ-আবিষ্কারক লিজ মেইটনারের নামে।'],
+  110: ['ডার্মস্টাডটিয়াম','জার্মানির দার্মস্টাডের নামে। মাত্র কয়েকটি পরমাণু তৈরি হয়েছে।'],
+  111: ['রন্টজেনিয়াম','X-রে আবিষ্কারক উইলহেম রন্টজেনের নামে।'],
+  112: ['কোপার্নিসিয়াম','কোপার্নিকাসের নামে। আপেক্ষিকতার প্রভাবে ঘরের তাপমাত্রায় গ্যাসীয় হতে পারে।'],
+  113: ['নিহোনিয়াম','এশিয়ায় আবিষ্কৃত প্রথম মৌল। জাপানের নামে (নিহন)।'],
+  114: ['ফ্লেরোভিয়াম','ফ্লেরভ ল্যাবরেটরির নামে। নোবেল গ্যাসের মতো ঘরের তাপমাত্রায় গ্যাসীয় হতে পারে।'],
+  115: ['মস্কোভিয়াম','মস্কো ওব্লাস্টের নামে। রাশিয়া ও মার্কিন যৌথভাবে সংশ্লেষিত।'],
+  116: ['লিভারমোরিয়াম','ক্যালিফোর্নিয়ার লরেন্স লিভারমোর ন্যাশনাল ল্যাবরেটরির নামে।'],
+  117: ['টেনেসিন','মার্কিন যুক্তরাষ্ট্রের টেনেসির নামে। দ্বিতীয় ভারীতম নিশ্চিত মৌল।'],
+  118: ['ওগানেসন','পদার্থবিদ ইউরি ওগানেসিয়ানের নামে। সবচেয়ে ভারী জ্ঞাত মৌল।'],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LANGUAGE TOGGLE
+// ─────────────────────────────────────────────────────────────────────────────
+let lang = 'en';
+document.getElementById('langToggle').addEventListener('click', () => {
+  lang = lang === 'en' ? 'bn' : 'en';
+  document.querySelectorAll('.lang-en').forEach(el => el.classList.toggle('hidden', lang !== 'en'));
+  document.querySelectorAll('.lang-bn').forEach(el => el.classList.toggle('hidden', lang !== 'bn'));
+  document.body.classList.toggle('bangla', lang === 'bn');
+  // update search placeholder
+  const inp = document.getElementById('searchInput');
+  inp.placeholder = lang === 'bn' ? inp.dataset.placeholderBn : inp.dataset.placeholderEn;
+  // rebuild legend labels
+  buildLegend();
+  // re-render panel if something was shown
+  if (lastPanelZ) renderPanel(lastPanelZ);
+});
+
+// Rows 1-7 = main table. Row 8 = spacer (CSS gap). Rows 9-10 = f-block.
+// ─────────────────────────────────────────────────────────────────────────────
+const POSITIONS = [
+  // Period 1
+  [1,1,1],[2,1,18],
+  // Period 2
+  [3,2,1],[4,2,2],[5,2,13],[6,2,14],[7,2,15],[8,2,16],[9,2,17],[10,2,18],
+  // Period 3
+  [11,3,1],[12,3,2],[13,3,13],[14,3,14],[15,3,15],[16,3,16],[17,3,17],[18,3,18],
+  // Period 4
+  [19,4,1],[20,4,2],[21,4,3],[22,4,4],[23,4,5],[24,4,6],[25,4,7],
+  [26,4,8],[27,4,9],[28,4,10],[29,4,11],[30,4,12],
+  [31,4,13],[32,4,14],[33,4,15],[34,4,16],[35,4,17],[36,4,18],
+  // Period 5
+  [37,5,1],[38,5,2],[39,5,3],[40,5,4],[41,5,5],[42,5,6],[43,5,7],
+  [44,5,8],[45,5,9],[46,5,10],[47,5,11],[48,5,12],
+  [49,5,13],[50,5,14],[51,5,15],[52,5,16],[53,5,17],[54,5,18],
+  // Period 6  (La–Lu placeholder at col 3; Hf onwards fills cols 4-18)
+  [55,6,1],[56,6,2],/* placeholder col3 */
+  [72,6,4],[73,6,5],[74,6,6],[75,6,7],[76,6,8],[77,6,9],[78,6,10],
+  [79,6,11],[80,6,12],[81,6,13],[82,6,14],[83,6,15],[84,6,16],[85,6,17],[86,6,18],
+  // Period 7  (Ac–Lr placeholder at col 3; Rf onwards fills cols 4-18)
+  [87,7,1],[88,7,2],/* placeholder col3 */
+  [104,7,4],[105,7,5],[106,7,6],[107,7,7],[108,7,8],[109,7,9],[110,7,10],
+  [111,7,11],[112,7,12],[113,7,13],[114,7,14],[115,7,15],[116,7,16],[117,7,17],[118,7,18],
+  // Lanthanides — grid row 9, cols 3-17
+  [57,9,3],[58,9,4],[59,9,5],[60,9,6],[61,9,7],[62,9,8],[63,9,9],
+  [64,9,10],[65,9,11],[66,9,12],[67,9,13],[68,9,14],[69,9,15],[70,9,16],[71,9,17],
+  // Actinides — grid row 10, cols 3-17
+  [89,10,3],[90,10,4],[91,10,5],[92,10,6],[93,10,7],[94,10,8],[95,10,9],
+  [96,10,10],[97,10,11],[98,10,12],[99,10,13],[100,10,14],[101,10,15],[102,10,16],[103,10,17],
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD LEGEND (called on init and on lang toggle)
+// ─────────────────────────────────────────────────────────────────────────────
+let lastPanelZ = null;
+
+function buildLegend() {
+  const legendEl = document.getElementById('legend');
+  legendEl.innerHTML = '';
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const item = document.createElement('div');
+    item.className = 'lItem' + (activeCatFilter === key ? ' active' : '');
+    item.dataset.cat = key;
+    item.style.setProperty('--lc', cat.color);
+    const label = lang === 'bn' ? cat.labelBn : cat.label;
+    item.innerHTML = `<span class="lDot" style="background:${cat.color}"></span>${label}`;
+    item.addEventListener('click', () => filterByCategory(key));
+    legendEl.appendChild(item);
+  });
+}
+let activeCatFilter = null;
+buildLegend();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD GRID  — each cell placed explicitly via inline grid-row/grid-column
+// ─────────────────────────────────────────────────────────────────────────────
+const grid = document.getElementById('ptGrid');
+
+// Build a set of filled positions for quick lookup
+const filledPos = new Set(POSITIONS.map(([,r,c]) => `${r}_${c}`));
+
+function makeCell(z) {
+  const el = elMap[z];
+  const [num,sym,name,mass,cat,,,,,,,,] = el;
+  const color = CATEGORIES[cat]?.color || '#fff';
+
+  const cell = document.createElement('div');
+  cell.className = 'el';
+  cell.dataset.z = num;
+  cell.dataset.cat = cat;
+  cell.dataset.name = name.toLowerCase();
+  cell.dataset.sym = sym.toLowerCase();
+  cell.style.setProperty('--elColor', color);
+
+  const massStr = typeof mass === 'number'
+    ? (mass % 1 === 0 ? `(${mass})` : mass.toFixed(mass < 10 ? 3 : 2))
+    : mass;
+
+  cell.innerHTML = `
+    <span class="elNum">${num}</span>
+    <span class="elSym">${sym}</span>
+    <span class="elName">${name}</span>
+    <span class="elMass">${massStr}</span>
+  `;
+  cell.addEventListener('mouseenter', () => showPanel(z));
+  cell.addEventListener('click', () => lockPanel(z));
+  return cell;
+}
+
+// Place all real elements
+POSITIONS.forEach(([z, row, col]) => {
+  const cell = makeCell(z);
+  cell.style.gridRow = row;
+  cell.style.gridColumn = col;
+  // stagger animation based on reading order
+  cell.style.animationDelay = ((row - 1) * 18 + (col - 1)) * 6 + 'ms';
+  grid.appendChild(cell);
+});
+
+// Series placeholders (row 6 col 3, row 7 col 3)
+[
+  { row: 6, col: 3, color: CATEGORIES.lanthanide.color, label: '57–71' },
+  { row: 7, col: 3, color: CATEGORIES.actinide.color,   label: '89–103' },
+].forEach(({ row, col, color, label }) => {
+  const ph = document.createElement('div');
+  ph.className = 'seriesPlaceholder';
+  ph.style.gridRow = row;
+  ph.style.gridColumn = col;
+  ph.innerHTML = `
+    <div class="spDots">
+      <div class="spDot" style="background:${color}"></div>
+      <div class="spDot" style="background:${color};opacity:.6"></div>
+      <div class="spDot" style="background:${color};opacity:.3"></div>
+    </div>
+    <div class="spLabel" style="color:${color}">${label}</div>
+  `;
+  grid.appendChild(ph);
+});
+
+// Row-number labels (left side of main table, periods 1-7)
+for (let p = 1; p <= 7; p++) {
+  const lbl = document.createElement('div');
+  lbl.style.cssText = `
+    grid-row:${p}; grid-column:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; pointer-events:none;
+  `;
+  // Period label overlays — we skip this to keep it uncluttered
+  // grid.appendChild(lbl);
+}
+
+// f-block row labels (col 1, rows 9 and 10)
+[
+  { row: 9,  label: 'La', color: CATEGORIES.lanthanide.color },
+  { row: 10, label: 'Ac', color: CATEGORIES.actinide.color },
+].forEach(({ row, label, color }) => {
+  const lbl = document.createElement('div');
+  lbl.style.cssText = `
+    grid-row:${row}; grid-column:1 / 3;
+    display:flex; align-items:center; justify-content:flex-end; padding-right:6px;
+  `;
+  lbl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:${color};opacity:0.5;text-transform:uppercase;">${label} series</span>`;
+  grid.appendChild(lbl);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+let panelLocked = false;
+
+function lockPanel(z) {
+  panelLocked = true;
+  lastPanelZ = z;
+  renderPanel(z);
+  document.querySelectorAll('.el').forEach(c => c.classList.remove('pinned'));
+  document.querySelector(`.el[data-z="${z}"]`)?.classList.add('pinned');
+}
+
+function showPanel(z) {
+  if (panelLocked) return;
+  lastPanelZ = z;
+  renderPanel(z);
+}
+
+function renderPanel(z) {
+  const el = elMap[z];
+  if (!el) return;
+  const [num,sym,name,mass,cat,period,grp,config,melt,boil,density,disc,descEn] = el;
+  const color = CATEGORIES[cat]?.color || '#fff';
+  const catLabel = lang === 'bn'
+    ? (CATEGORIES[cat]?.labelBn || CATEGORIES[cat]?.label)
+    : (CATEGORIES[cat]?.label || cat);
+
+  const bnData = BN[num];
+  const displayName = (lang === 'bn' && bnData) ? bnData[0] : name;
+  const displayDesc = (lang === 'bn' && bnData) ? bnData[1] : descEn;
+
+  document.getElementById('panelEmpty').style.display = 'none';
+  const content = document.getElementById('panelContent');
+  content.style.display = 'block';
+
+  const fmtMass = v => typeof v === 'number'
+    ? (v % 1 === 0 ? `[${v}]` : v.toFixed(3))
+    : String(v);
+  const fmtTemp = v => v == null ? '—' : `${v > 0 ? '+' : ''}${v} °C`;
+
+  const labelZ      = lang === 'bn' ? 'পারমাণবিক সংখ্যা' : 'Z';
+  const labelDisc   = lang === 'bn' ? 'আবিষ্কার' : 'Discovered';
+  const labelMass   = lang === 'bn' ? 'পারমাণবিক ভর' : 'Atomic mass';
+  const labelPG     = lang === 'bn' ? 'পর্যায় / গ্রুপ' : 'Period / Group';
+  const labelMelt   = lang === 'bn' ? 'গলনাঙ্ক' : 'Melting pt.';
+  const labelBoil   = lang === 'bn' ? 'স্ফুটনাঙ্ক' : 'Boiling pt.';
+  const labelDens   = lang === 'bn' ? 'ঘনত্ব' : 'Density';
+  const labelState  = lang === 'bn' ? '২৫°C-এ অবস্থা' : 'State @ 25°C';
+  const labelConfig = lang === 'bn' ? 'ইলেকট্রন বিন্যাস' : 'Electron config';
+  const stateVal    = getState(melt, boil);
+  const stateMap    = { '🔩 Solid': '🔩 কঠিন', '💧 Liquid': '💧 তরল', '💨 Gas': '💨 গ্যাস', '—': '—' };
+
+  content.innerHTML = `
+    <div class="pHeader">
+      <div class="pNum">${labelZ} = ${num} &nbsp;·&nbsp; ${labelDisc} ${disc}</div>
+      <div class="pSym" style="background:linear-gradient(135deg,${color},rgba(255,255,255,0.85) 200%);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:4.2rem;font-weight:800;line-height:1;">${sym}</div>
+      <div class="pName">${displayName}</div>
+      ${lang === 'bn' && bnData ? `<div style="font-size:0.72rem;opacity:0.4;font-family:'Space Mono',monospace;margin-top:2px;">${name}</div>` : ''}
+      <div class="pCat" style="color:${color};border-color:${color}">${catLabel}</div>
+    </div>
+    <div class="pDivider"></div>
+    <div class="pGrid">
+      <div class="pStat"><label>${labelMass}</label><value>${fmtMass(mass)} u</value></div>
+      <div class="pStat"><label>${labelPG}</label><value>${period} / ${grp || 'f-block'}</value></div>
+      <div class="pStat"><label>${labelMelt}</label><value style="font-size:0.75rem">${fmtTemp(melt)}</value></div>
+      <div class="pStat"><label>${labelBoil}</label><value style="font-size:0.75rem">${fmtTemp(boil)}</value></div>
+      <div class="pStat"><label>${labelDens}</label><value style="font-size:0.75rem">${density != null ? density + ' g/cm³' : '—'}</value></div>
+      <div class="pStat"><label>${labelState}</label><value>${lang === 'bn' ? (stateMap[stateVal] || stateVal) : stateVal}</value></div>
+    </div>
+    <div class="pConfig" style="border-left:2px solid ${color};color:${color}">${config}</div>
+    <div class="pDesc">${displayDesc}</div>
+    ${panelLocked ? `<div style="margin-top:0.8rem;font-family:'Space Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;opacity:0.3;text-transform:uppercase;">${lang === 'bn' ? 'আনলক করতে অন্য জায়গায় ক্লিক করুন' : 'Click elsewhere to unlock'}</div>` : ''}
+  `;
+}
+
+function getState(melt, boil) {
+  if (melt == null) return '—';
+  if (melt > 25) return '🔩 Solid';
+  if (boil != null && boil < 25) return '💨 Gas';
+  return '💧 Liquid';
+}
+
+// Click outside unlocks panel
+document.addEventListener('click', e => {
+  if (!e.target.closest('.el') && !e.target.closest('.panel')) {
+    panelLocked = false;
+    document.querySelectorAll('.el').forEach(c => c.classList.remove('pinned'));
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEARCH & FILTER
+// ─────────────────────────────────────────────────────────────────────────────
+let activeFilter = null;
+let activeSearch = '';
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  activeSearch = this.value.toLowerCase().trim();
+  applyFilter();
+});
+
+document.querySelectorAll('.filterBtn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const f = this.dataset.filter;
+    activeFilter = (activeFilter === f || f === 'all') ? null : f;
+    document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
+    if (activeFilter) this.classList.add('active');
+    applyFilter();
+  });
+});
+
+function filterByCategory(cat) {
+  activeCatFilter = (activeCatFilter === cat) ? null : cat;
+  buildLegend();
+  document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
+  applyFilter();
+}
+
+function applyFilter() {
+  const cells = document.querySelectorAll('.el');
+  cells.forEach(cell => {
+    const cat  = cell.dataset.cat;
+    const name = cell.dataset.name;
+    const sym  = cell.dataset.sym;
+    const z    = parseInt(cell.dataset.z);
+
+    let matchSearch = true;
+    if (activeSearch) {
+      matchSearch = name.includes(activeSearch)
+        || sym.includes(activeSearch)
+        || String(z) === activeSearch
+        || String(z).startsWith(activeSearch);
+    }
+
+    let matchFilter = true;
+    const currentFilter = activeFilter || activeCatFilter;
+    if (currentFilter) {
+      if (['metal','nonmetal','noble'].includes(currentFilter)) {
+        matchFilter = CATEGORIES[cat]?.group === currentFilter;
+      } else {
+        matchFilter = cat === currentFilter;
+      }
+    }
+
+    const show = matchSearch && matchFilter;
+    const hasQuery = !!(activeSearch || activeFilter || activeCatFilter);
+    cell.classList.toggle('dim', !show);
+    cell.classList.toggle('highlight', show && hasQuery);
+    if (!hasQuery) {
+      cell.classList.remove('dim');
+      cell.classList.remove('highlight');
+    }
+  });
+}
+</script>
+</body>
+</html>
